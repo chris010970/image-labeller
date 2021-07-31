@@ -3,6 +3,7 @@ import osr
 import glob
 import argparse
 import geopandas as gpd
+import shapely
 
 from osgeo import gdal
 from inventory import Inventory
@@ -39,6 +40,7 @@ class Chipper():
         path = os.path.join( path, args.match )
 
         inventory = Inventory.get( glob.glob( path, recursive=True ) )
+        #inventory.geometry = inventory.geometry.map(lambda polygon: shapely.ops.transform(lambda x, y: (y, x), polygon))
 
         # for each located image
         chips = []
@@ -50,13 +52,13 @@ class Chipper():
 
             # get image chips collocated with intersecting polygons 
             _minx, _miny, _maxx, _maxy = image.geometry.bounds
-            intersects = polygons.cx[ _minx : _maxx, _miny : _maxy ]        
+            intersects = polygons.cx[ _miny : _maxy, _minx : _maxx ]        
             
             for polygon in intersects.itertuples():
 
                 # compute reprojected centroid location of intersecting polygon
                 centroid = polygon.geometry.centroid
-                coords = Inventory.reprojectCoordinates( [ ( centroid.x, centroid.y ) ], src_srs, Inventory._geo_srs )
+                coords = Inventory.reprojectCoordinates( [ ( centroid.y, centroid.x ) ], Inventory._geo_srs, src_srs )
 
                 # get centroid image coordinates
                 px = int( ( coords[ 0 ][ 0 ] - image.transform[0]) / image.transform[1] )
@@ -94,7 +96,7 @@ class Chipper():
                                 # use gdal to crop image
                                 out_ds = gdal.Translate(    out_pathname, 
                                                             ds, 
-                                                            bandList=[ 1,2,3 ], 
+                                                            bandList=[1,2,3,4,5,6,7,8,9], 
                                                             srcWin = [xoff, yoff, args.crop_size, args.crop_size ], 
                                                             creationOptions=Chipper._formats[ args.format ] )
 

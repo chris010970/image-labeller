@@ -39,7 +39,7 @@ class Labeller():
 
             # get polygons intersecting image geographic extent
             _minx, _miny, _maxx, _maxy = image.geometry.bounds
-            intersects = self._polygons.cx[ _minx : _maxx, _miny : _maxy ]
+            intersects = self._polygons.cx[ _miny : _maxy, _minx : _maxx ]
 
             for label in self._labels:
 
